@@ -1,4 +1,4 @@
-# Your MERN Stack Application
+# A MERN Stack Chatting Application
 
 This project is a MERN (MongoDB, Express.js, React, Node.js) stack application created using Create React App for the client-side.
 
