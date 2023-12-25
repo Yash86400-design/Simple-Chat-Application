@@ -2,13 +2,12 @@ import React, { useContext, useState } from 'react';
 import './ChatHeader.css';
 import SelectedChatContext from '../../contexts/SelectedChatroomContext';
 
-function ChatHeader({ socketClient }) {
-
+function ChatHeader() {
   const chatRooms = ["General", "Tech Talk", "Random"];
   const [currentChatRoom, setCurrentChatRoom] = useState("General");
   const currentUser = "John Doe";
   const { setSelectedChat } = useContext(SelectedChatContext);
-  console.log(socketClient);
+
   const handleRoomChange = (selectedRoom) => {
     setCurrentChatRoom(selectedRoom);
     // console.log("Switched to room:", currentChatRoom);

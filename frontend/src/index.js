@@ -2,10 +2,13 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
+import SocketContextProvider from './contexts/SocketConnectionContextProvider';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <App />
+    <SocketContextProvider>
+      <App />
+    </SocketContextProvider>
   </React.StrictMode>
 );

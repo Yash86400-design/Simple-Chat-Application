@@ -37,10 +37,29 @@ io.on('connection', (socket) => {
   console.log('a user connected', userId);
   socket.emit('userId', userId);
 
-  socket.on('message-sent', ({ room, content }) => {
-    console.log(selectedChat, message);
-    console.log(`Received message from ${userId}: ${content} inside chatroom: ${room}`);
-    io.emit('message', { userId, message: data });
+  // Joining rooms
+  socket.on('joinRoom', ({ roomName }) => {
+    socket.join(roomName);
+    console.log(`User: ${userId} Joined room: ${roomName}`);
+  });
+  // socket.join('general-room');
+  // socket.join('tech-room');
+  // socket.join('random-room');
+
+  socket.on('general-room', ({ room, content }) => {
+    // io.emit('message-received-sent-back-again', { userId, message: content });
+    console.log(content, room, userId);
+    io.to('General').emit('general-room-messages',{ userId, message: content });
+  });
+
+  socket.on('tech-room', ({ room, content }) => {
+    console.log(content, room, userId);
+    io.to('Tech Talk').emit('tech-room-messages', { userId, message: content });
+  });
+
+  socket.on('random-room', ({ room, content }) => {
+    console.log(content, room, userId);
+    io.to('Random').emit('random-room-messages', { userId, message: content });
   });
 
   socket.on('disconnect', () => {

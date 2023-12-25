@@ -6,7 +6,7 @@
   "scripts": {
     "start": "cd backend && node app.js",
     "client": "cd frontend && npm start",
-    "server": "cd backend && npm start",
+    "server": "cd backend && nodemon app.js",
     "dev": "concurrently \"npm run client\" \"npm run server\"",
     "build": "cd client && npm run build"
   },
