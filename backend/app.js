@@ -16,6 +16,38 @@ const io = new Server(server, {
   }
 });
 
+// Random name generators
+const firstNames = [
+  'Aarav', 'Aanya', 'Aaradhya', 'Abhinav', 'Aditi', 'Advait', 'Aisha', 'Akshay', 'Amrita', 'Ananya',
+  'Aniket', 'Anika', 'Anirudh', 'Anjali', 'Arjun', 'Arya', 'Ashwin', 'Avni', 'Ayush', 'Chetan',
+  'Dhruv', 'Divya', 'Esha', 'Gaurav', 'Gayatri', 'Harsh', 'Ishaan', 'Jiya', 'Kabir', 'Kavya',
+  'Krishna', 'Lavanya', 'Mahesh', 'Meera', 'Mohit', 'Neha', 'Nikhil', 'Nina', 'Nitin', 'Pooja',
+  'Pranav', 'Priya', 'Rahul', 'Riya', 'Rohit', 'Saachi', 'Sahil', 'Sanvi', 'Shreya', 'Siddharth',
+  'Simran', 'Sneha', 'Suman', 'Tanvi', 'Uday', 'Vaishnavi', 'Varun', 'Vidya', 'Vikram', 'Yash',
+  'Zoya', 'Arnav', 'Ishita', 'Rehaan', 'Ritika', 'Kunal', 'Ishani', 'Surya', 'Jasmine', 'Rajat',
+  'Anvi', 'Nandini', 'Ansh', 'Aditya', 'Aryana', 'Ishan', 'Akshara', 'Aryan', 'Vivaan', 'Khushi',
+  'Aryaman', 'Riyaan', 'Advika', 'Aarush', 'Sara', 'Vihaan', 'Advay', 'Viha', 'Prisha', 'Aaditya'
+];
+const lastNames = [
+  'Sharma', 'Verma', 'Singh', 'Patel', 'Das', 'Jha', 'Yadav', 'Bose', 'Reddy', 'Chatterjee',
+  'Kumar', 'Chauhan', 'Gupta', 'Pillai', 'Iyer', 'Mukherjee', 'Nair', 'Rao', 'Mehta', 'Malhotra',
+  'Lal', 'Rastogi', 'Mishra', 'Jain', 'Agarwal', 'Goswami', 'Sinha', 'Raj', 'Ahuja', 'Banerjee',
+  'Pandey', 'Dutta', 'Srivastava', 'Ganguly', 'Trivedi', 'Kulkarni', 'Menon', 'Sethi', 'Saxena',
+  'Bhat', 'Nayak', 'Chopra', 'Deshmukh', 'Hegde', 'Pawar', 'Biswas', 'Rawat', 'Thakur', 'Joshi',
+  'Tiwari', 'Khan', 'Choudhury', 'Yadav', 'Dube', 'Puri', 'Sen', 'Banerji', 'Ranganathan', 'Venkatesh',
+  'Choudhary', 'Rajput', 'Mistry', 'Kapoor', 'Deshpande', 'Kamble', 'Narayan', 'Rangan', 'Nagpal',
+  'Rai', 'Saini', 'Bajaj', 'Tandon', 'Bhatia', 'Sarin', 'Kohli', 'Dhillon', 'Talwar', 'Seth', 'Mittal',
+  'Kher', 'Khanna', 'Datta', 'Nath', 'Kapoor', 'Rathi', 'Anand', 'Bakshi', 'Varma', 'Sabharwal',
+  'Mathur', 'Chauhan', 'Dubey', 'Arora', 'Bhatt', 'Sisodia', 'Shukla', 'Soni', 'Sundaram', 'Raghavan'
+];
+
+function generateRandomName() {
+  const randomFirstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+  const randomLastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+
+  return `${randomFirstName} ${randomLastName}`;
+}
+
 // CORS issue handle
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "http://localhost:3000");
@@ -33,14 +65,15 @@ app.get('/api/data', (req, res) => {
 });
 
 io.on('connection', (socket) => {
+  const randomUserName = generateRandomName();
   const userId = uuidv4();
-  console.log('a user connected', userId);
-  socket.emit('userId', userId);
+  console.log('a user connected', userId, randomUserName);
+  socket.emit('userId', randomUserName);
 
   // Joining rooms
   socket.on('joinRoom', ({ roomName }) => {
     socket.join(roomName);
-    console.log(`User: ${userId} Joined room: ${roomName}`);
+    console.log(`User: ${randomUserName} Joined room: ${roomName}`);
   });
   // socket.join('general-room');
   // socket.join('tech-room');
@@ -48,22 +81,19 @@ io.on('connection', (socket) => {
 
   socket.on('general-room', ({ room, content }) => {
     // io.emit('message-received-sent-back-again', { userId, message: content });
-    console.log(content, room, userId);
-    io.to('General').emit('general-room-messages',{ userId, message: content });
+    io.to(room).emit('general-room-messages', { userId: randomUserName, message: content });
   });
 
   socket.on('tech-room', ({ room, content }) => {
-    console.log(content, room, userId);
-    io.to('Tech Talk').emit('tech-room-messages', { userId, message: content });
+    io.to(room).emit('tech-room-messages', { userId: randomUserName, message: content });
   });
 
   socket.on('random-room', ({ room, content }) => {
-    console.log(content, room, userId);
-    io.to('Random').emit('random-room-messages', { userId, message: content });
+    io.to(room).emit('random-room-messages', { userId: randomUserName, message: content });
   });
 
   socket.on('disconnect', () => {
-    console.log(`User ${userId} disconnected`);
+    console.log(`User ${randomUserName} disconnected`);
   });
 });
 
