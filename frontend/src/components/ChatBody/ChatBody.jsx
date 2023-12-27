@@ -47,13 +47,19 @@ function ChatBody() {
 
     if (socketConnection) {
       if (selectedChat === 'General') {
-        socketConnection.on('general-room-messages', handleGeneralRoomMessages);
+        socketConnection.on('general-room-messages', handleGeneralRoomMessages, (serverOffset) => {
+          socketConnection.auth.serverOffset = serverOffset;
+        });
       }
       else if (selectedChat === 'Tech Talk') {
-        socketConnection.on('tech-room-messages', handleTechRoomMessages);
+        socketConnection.on('tech-room-messages', handleTechRoomMessages, (serverOffset) => {
+          socketConnection.auth.serverOffset = serverOffset;
+        });
       }
       else if (selectedChat === 'Random') {
-        socketConnection.on('random-room-messages', handleRandomRoomMessages);
+        socketConnection.on('random-room-messages', handleRandomRoomMessages, (serverOffset) => {
+          socketConnection.auth.serverOffset = serverOffset;
+        });
       }
     }
 

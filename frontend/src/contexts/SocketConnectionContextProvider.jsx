@@ -8,7 +8,11 @@ const SocketContextProvider = ({ children }) => {
 
   useEffect(() => {
     const rooms = ['General', 'Tech Talk', 'Random'];
-    const socket = io('http://localhost:5000');
+    const socket = io('http://localhost:5000', {
+      auth: {
+        serverOffset: 0
+      }
+    });
     socket.on('userId', (receivedUserId) => {
       setUserId(receivedUserId);
     });

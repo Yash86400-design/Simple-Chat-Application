@@ -3,9 +3,38 @@ import dotenv from "dotenv";
 import { createServer } from 'node:http';
 import { Server } from "socket.io";
 import { v4 as uuidv4 } from "uuid";
+import sqlite3 from "sqlite3";
+import { open } from 'sqlite';
 
 // Load environment variables from the .env file in the config directory
 dotenv.config({ path: './config/.env' });
+
+// open the database file
+const db = await open({
+  filename: 'chat.db',
+  driver: sqlite3.Database
+});
+
+await db.exec(`
+  CREATE TABLE IF NOT EXISTS general_room_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    client_offset TEXT UNIQUE,
+    content TEXT
+    name TEXT
+  );
+  CREATE TABLE IF NOT EXISTS tech_room_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    client_offset TEXT UNIQUE,
+    content TEXT
+    name TEXT
+  );
+  CREATE TABLE IF NOT EXISTS random_room_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    client_offset TEXT UNIQUE,
+    content TEXT
+    name TEXT
+  );
+`);
 
 const app = express();
 const server = createServer(app);
@@ -13,7 +42,8 @@ const io = new Server(server, {
   cors: {
     origin: "http://localhost:3000",
     methods: ["GET", "POST"]
-  }
+  },
+  connectionStateRecovery: {}
 });
 
 // Random name generators
@@ -64,7 +94,7 @@ app.get('/api/data', (req, res) => {
   res.send({ message: "Hello, MERN stack!" });
 });
 
-io.on('connection', (socket) => {
+io.on('connection', async (socket) => {
   const randomUserName = generateRandomName();
   const userId = uuidv4();
   console.log('a user connected', userId, randomUserName);
@@ -75,22 +105,54 @@ io.on('connection', (socket) => {
     socket.join(roomName);
     console.log(`User: ${randomUserName} Joined room: ${roomName}`);
   });
-  // socket.join('general-room');
-  // socket.join('tech-room');
-  // socket.join('random-room');
 
-  socket.on('general-room', ({ room, content }) => {
-    // io.emit('message-received-sent-back-again', { userId, message: content });
-    io.to(room).emit('general-room-messages', { userId: randomUserName, message: content });
+  socket.on('general-room', async ({ room, content }) => {
+    let result;
+    try {
+      // store the message in corresponding database
+      result = await db.run('INSERT INTO general_room_messages (content) VALUES (?)', content);
+    } catch (error) {
+      console.log(error);
+    }
+    io.to(room).emit('general-room-messages', { userId: randomUserName, message: content }, result.lastID);
   });
 
-  socket.on('tech-room', ({ room, content }) => {
-    io.to(room).emit('tech-room-messages', { userId: randomUserName, message: content });
+  socket.on('tech-room', async ({ room, content }) => {
+    let result;
+    try {
+      result = await db.run('INSERT INTO tech_room_messages (content) VALUES (?)', content);
+    } catch (error) {
+      console.log(error);
+    }
+    io.to(room).emit('tech-room-messages', { userId: randomUserName, message: content }, result.lastID);
   });
 
-  socket.on('random-room', ({ room, content }) => {
-    io.to(room).emit('random-room-messages', { userId: randomUserName, message: content });
+  socket.on('random-room', async ({ room, content }) => {
+    let result;
+    try {
+      result = await db.run('INSERT INTO random_room_messages (content) VALUES (?)', content);
+    } catch (error) {
+      console.log(error);
+    }
+    io.to(room).emit('random-room-messages', { userId: randomUserName, message: content }, result.lastID);
   });
+
+  if (!socket.recovered) {
+    // If the connection state recovery was not successful
+    const rooms = Object.keys(socket.rooms); // Get all rooms the user is in
+    rooms.forEach(async (room) => {
+      const lastMessageId = socket.handshake.auth[`${room}LastMessageId`] || 0;
+      try {
+        // Fetch messages from the database starting from the lastMessageId
+        const messages = await db.all(`SELECT id, content, name FROM ${room}_messages WHERE id > ?`, lastMessageId);
+        messages.forEach((message) => {
+          socket.to(room).emit('room-messages', { userId: message.name, message: message.content, messageId: message.id });
+        });
+      } catch (error) {
+        console.log(error);
+      }
+    });
+  }
 
   socket.on('disconnect', () => {
     console.log(`User ${randomUserName} disconnected`);
